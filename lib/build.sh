@@ -180,6 +180,9 @@ run_compile() {
 
   has_clean=$(mix help "${phoenix_ex}.digest.clean" 1>/dev/null 2>&1; echo $?)
 
+  echo $cache_dir
+  cd ${cache_dir}/phoenix-static && ls
+
   if [ $has_clean = 0 ]; then
     mkdir -p $cache_dir/phoenix-static
     info "Restoring cached assets"
