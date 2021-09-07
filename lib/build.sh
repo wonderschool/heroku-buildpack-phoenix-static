@@ -179,17 +179,17 @@ run_compile() {
   cd $phoenix_dir
 
   has_clean=$(mix help "${phoenix_ex}.digest.clean" 1>/dev/null 2>&1; echo $?)
+  echo $has_clean
+  echo "Cache Directory ${cache_dir}"
 
-  echo $cache_dir
-  cd ${cache_dir}/phoenix-static && ls
+  # if [ $has_clean = 0 ]; then
+  #   mkdir -p $cache_dir/phoenix-static
+  #   info "Restoring cached assets"
+   mkdir -p priv
+  #   rsync -a -v --ignore-existing $cache_dir/phoenix-static/ priv/static
+  # fi
 
-  if [ $has_clean = 0 ]; then
-    mkdir -p $cache_dir/phoenix-static
-    info "Restoring cached assets"
-    mkdir -p priv
-    rsync -a -v --ignore-existing $cache_dir/phoenix-static/ priv/static
-  fi
-
+  echo "Assets Directory ${assets_dir}"
   cd $assets_dir
 
   if [ -f $custom_compile ]; then
@@ -202,10 +202,10 @@ run_compile() {
 
   cd $phoenix_dir
 
-  if [ $has_clean = 0 ]; then
-    info "Caching assets"
-    rsync -a --delete -v priv/static/ $cache_dir/phoenix-static
-  fi
+  # if [ $has_clean = 0 ]; then
+  #   info "Caching assets"
+  #   rsync -a --delete -v priv/static/ $cache_dir/phoenix-static
+  # fi
 }
 
 cache_versions() {
