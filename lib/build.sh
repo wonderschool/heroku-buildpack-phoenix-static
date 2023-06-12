@@ -20,16 +20,44 @@ load_previous_npm_node_versions() {
   fi
 }
 
+# Taken from another fork of this buildpack at
+# https://github.com/gigalixir/gigalixir-buildpack-phoenix-static/commit/414e2fcabf0ac28ee5d63d588feff4afa6517ea2
+resolve_node() {
+  echo "Resolving node version $node_version..."
+
+  local base_url="https://nodejs.org/dist"
+  local lookup_url=""
+
+  case $node_version in
+    ""|latest)
+      lookup_url="${base_url}/latest/"
+      ;;
+    v*)
+      lookup_url="${base_url}/${node_version}/"
+      ;;
+    *)
+      lookup_url="${base_url}/v${node_version}/"
+      ;;
+  esac
+
+  echo "Checking index at $lookup_url..."
+
+  local node_file=$(curl --silent --get --retry 5 --retry-max-time 15 $lookup_url -f | grep -oE  '"node-v[0-9]+.[0-9]+.[0-9]+-linux-x64.tar.gz"')
+  if [ "$?" -eq "0" ]; then
+    number=$(echo "$node_file" | sed -E 's/.*node-v([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+    url="${base_url}/v${number}/${node_file//\"/}"
+  else
+    fail_bin_install node $node_version;
+  fi
+}
+
 download_node() {
   local platform=linux-x64
 
   if [ ! -f ${cached_node} ]; then
-    echo "Resolving node version $node_version..."
-    if ! read number url < <(curl --silent --get --retry 5 --retry-max-time 15 --data-urlencode "range=$node_version" "https://nodebin.herokai.com/v1/node/$platform/latest.txt"); then
-      fail_bin_install node $node_version;
-    fi
+    resolve_node
 
-    echo "Downloading and installing node $number..."
+    echo "Downloading and installing node $number from $url..."
     local code=$(curl "$url" -L --silent --fail --retry 5 --retry-max-time 15 -o ${cached_node} --write-out "%{http_code}")
     if [ "$code" != "200" ]; then
       echo "Unable to download node: $code" && false
